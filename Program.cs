@@ -56,18 +56,18 @@ namespace MIR1
                 foreach (var item in numbers)
                 {
                     string[] arrStr = new string[item];
-                    arrStr = arrStr.ToList().Select(x => new string(GenerationString(n, m, null))).ToArray();
+                    arrStr = arrStr.ToList().Select(x => new string(GenerationString(n, m, null, alphabet))).ToArray();
 
                     //arrStr.ToList().ForEach(x => Console.WriteLine(x));
-
-                   
-
+                    Console.WriteLine();
                     if (string.IsNullOrEmpty(sample))
                     {
                         Console.WriteLine("А искать то что?");
                     }
                     else
                     {
+                        Console.ForegroundColor=ConsoleColor.Yellow;
+                        Console.WriteLine($"Сгенерированных строк: { item }");
                         Console.WriteLine($"Совпадения: " + ((SearchNativeLogic(arrStr, sample)) ? "есть" : "нет"));
                         Console.WriteLine($"Совпадения: " + ((SearchKMPLogic(arrStr, sample)) ? "есть" : "нет"));
                     }
@@ -82,6 +82,11 @@ namespace MIR1
 
         static char[] GenerationString(int n, int m, char[] text = default, string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ")
         {
+            if (alphabet == null)
+            {
+                alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
+            }
+
             int length = random.Next(n, m + 1);
 
             if (text == null)
