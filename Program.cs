@@ -9,42 +9,58 @@ namespace MIR1
 {
     class Program
     {
+        static object locker = new object();
+
+        static Random random = new Random();
+
         static void Main(string[] args)
         {
             try
             {
+                string alphabet = "";
+                string sample = "";
+
+                Console.Write("Минимальная длина строки: ");
                 int n = int.Parse(Console.ReadLine());//От
+                Console.Write("Максимальная длина строки: ");
                 int m = int.Parse(Console.ReadLine());//До
 
                 int[] numbers = { 50, 100, 500, 1000, 1500 };
 
+                #region Проверка на пустоту
+                //===================================================================
+                Console.ForegroundColor = ConsoleColor.Blue;
+                if (string.IsNullOrEmpty(alphabet))
+                {
+                    Console.Write("Введите алфавит: ");
+                    alphabet = Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine($"Алфавит: {alphabet}");
+                }
+                Console.ForegroundColor = ConsoleColor.Red;
+                if (string.IsNullOrEmpty(sample))
+                {
+                    Console.Write("Введите подстроку: ");
+                    sample = Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine($"Подстрока: {sample}");
+                }
+                Console.ResetColor();
+                //===================================================================
+                #endregion
+
                 foreach (var item in numbers)
                 {
                     string[] arrStr = new string[item];
+                    arrStr = arrStr.ToList().Select(x => new string(GenerationString(n, m, null))).ToArray();
 
+                    //arrStr.ToList().ForEach(x => Console.WriteLine(x));
 
-                    for (int i = 0; i < arrStr.Length; i++)
-                    {
-                        arrStr[i] = new string(GenerationString(n, m, null, "ab"));
-                    }
-
-
-                    string alphabet = "aaaaaaaab";
-                    string sample = "aaaaaaa";
-
-                    Console.ForegroundColor = ConsoleColor.Blue;
-
-                    if (string.IsNullOrEmpty(sample))
-                    {
-                        Console.Write("Введите подстроку: ");
-                        sample = Console.ReadLine();
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Подстрока: {sample}");
-                    }
-
-                    Console.ResetColor();
+                   
 
                     if (string.IsNullOrEmpty(sample))
                     {
@@ -52,8 +68,8 @@ namespace MIR1
                     }
                     else
                     {
-                        SearchNativeLogic(arrStr, sample);
-                        SearchKMPLogic(arrStr, sample);
+                        Console.WriteLine($"Совпадения: " + ((SearchNativeLogic(arrStr, sample)) ? "есть" : "нет"));
+                        Console.WriteLine($"Совпадения: " + ((SearchKMPLogic(arrStr, sample)) ? "есть" : "нет"));
                     }
                     Console.WriteLine();
                 }
@@ -66,14 +82,20 @@ namespace MIR1
 
         static char[] GenerationString(int n, int m, char[] text = default, string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ")
         {
-            Random random = new Random(DateTime.Now.Second);
-
             int length = random.Next(n, m + 1);
 
             if (text == null)
             {
                 text = new char[length];
-                if (Parallel.For(0, length, x => text[x] = alphabet[random.Next(0, alphabet.Length)]).IsCompleted)
+                if (Parallel.For(0, length, x =>
+                {
+                    int index;
+                    lock (locker)
+                    {
+                        index = random.Next(0, alphabet.Length);
+                    }
+                    text[x] = alphabet[index];
+                }).IsCompleted)
                 {
                     return text;
                 }
@@ -81,8 +103,10 @@ namespace MIR1
             return text;
         }
 
-        static void SearchNativeLogic(string[] text, string sample)
+        static bool SearchNativeLogic(string[] text, string sample)
         {
+            bool IsSearch = false;
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Наивный алгоритм:");
             Console.ResetColor();
@@ -93,7 +117,13 @@ namespace MIR1
             List<List<int>> search = new List<List<int>>();
             for (int i = 0; i < text.Length; i++)
             {
-                search.Add(SearchNative(text[i], sample));
+                var searchInString = SearchNative(text[i], sample);
+                search.Add(searchInString);
+
+                if (searchInString.Count > 0)
+                {
+                    IsSearch = true;
+                }
             }
 
             stopwatch.Stop();
@@ -103,10 +133,14 @@ namespace MIR1
             //}
 
             Console.WriteLine(stopwatch?.Elapsed);
+
+            return IsSearch;
         }
 
-        static void SearchKMPLogic(string[] text, string sample)
+        static bool SearchKMPLogic(string[] text, string sample)
         {
+            bool IsSearch = false;
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("KMP алгоритм:");
             Console.ResetColor();
@@ -117,7 +151,13 @@ namespace MIR1
             List<List<int>> search = new List<List<int>>();
             for (int i = 0; i < text.Length; i++)
             {
-                search.Add(SearchKMP(text[i], sample));
+                var searchInString = SearchKMP(text[i], sample);
+                search.Add(searchInString);
+
+                if (searchInString.Count > 0)
+                {
+                    IsSearch = true;
+                }
             }
 
             stopwatch.Stop();
@@ -126,6 +166,8 @@ namespace MIR1
             //    PrintOutput(search[i], sample);
             //}
             Console.WriteLine(stopwatch?.Elapsed);
+
+            return IsSearch;
         }
 
         static void PrefixFunction(int[] values, string sample, int sampleLength)
